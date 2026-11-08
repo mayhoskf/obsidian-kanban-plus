@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "views": [
+    {
+      "basePath": "Base.base",
+      "viewName": "タスク-カンバン",
+      "groupBy": "note.status",
+      "colors": {
+        "todo": {
+          "preset": "red"
+        },
+        "in/progress": {
+          "preset": "yellow"
+        },
+        "in/pending": {
+          "preset": "green"
+        },
+        "area": {
+          "hex": "#8c47e1"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "bases-kanban-appearance",
+  "version": "0.6.0",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.cjs"
+  }
+}
