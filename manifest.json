@@ -1,7 +1,7 @@
 {
-  "id": "bases-kanban-appearance",
-  "name": "Bases Kanban Appearance",
-  "version": "0.6.0",
+  "id": "kanban-plus",
+  "name": "kanban-plus",
+  "version": "0.1.0",
   "minAppVersion": "1.14.4",
   "description": "Native Bases Kanban styling, colors, and body Todo creation and completion.",
   "author": "Local development",
