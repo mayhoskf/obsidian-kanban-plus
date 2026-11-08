@@ -16,7 +16,6 @@ const MODULES = [
   'settings/tab.css',
   'todos/panel.css',
   'appearance/appearance.cjs',
-  'todos/insertion.cjs',
   'todos/todos.cjs',
   'settings/tab.cjs',
   'main.cjs',

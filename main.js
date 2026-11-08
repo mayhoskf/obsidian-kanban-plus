@@ -416,7 +416,7 @@ module.exports = ".theme-dark .bases-view[data-view-type=\"kanban\"].bka-board {
 module.exports = ".bka-settings .bka-settings-form {\n  border: 0;\n  margin: 0;\n  padding: 0;\n  min-inline-size: 0;\n}\n.bka-settings .bka-setting-status {\n  color: var(--text-muted);\n}\n.bka-settings .bka-setting-error {\n  color: var(--text-error);\n}\n.bka-settings .bka-color-row .setting-item-control {\n  flex-wrap: wrap;\n  gap: 8px;\n}\n.bka-settings .bka-color-hex {\n  width: 104px;\n}\n.bka-settings input[aria-invalid=\"true\"] {\n  border-color: var(--text-error);\n}\n.bka-settings .setting-item-control select {\n  max-width: 100%;\n}\n";
 },
 "todos/panel.css": function(module, exports, require) {
-module.exports = "/* Reserve the same slot in the native measurement card and the visible cards. */\n.theme-dark .bka-board.bka-todos .bases-kanban-card {\n  padding-bottom: calc(var(--bka-todo-native-bottom) + 116px) !important;\n}\n.bka-todo-panel {\n  position: absolute;\n  inset-inline: 12px;\n  bottom: var(--bka-todo-native-bottom);\n  height: 108px;\n  box-sizing: border-box;\n  overflow: auto;\n  overscroll-behavior: contain;\n  border-top: 1px solid var(--background-modifier-border);\n  padding-top: 4px;\n  font-size: 12px;\n  line-height: 20px;\n  cursor: text;\n  user-select: text;\n}\n.bka-todo-panel:focus-visible {\n  outline: 1px solid var(--interactive-accent);\n  outline-offset: 2px;\n}\n.bka-todo-heading {\n  font-weight: 600;\n  color: var(--text-muted);\n}\n.bka-todo-row {\n  display: flex;\n  align-items: baseline;\n  gap: 6px;\n  min-height: 20px;\n}\n.bka-todo-row input[type=\"checkbox\"] {\n  flex: none;\n  margin: 0;\n  opacity: 1;\n}\n.bka-todo-text {\n  overflow-wrap: anywhere;\n  white-space: pre-wrap;\n}\n.bka-todo-marker {\n  flex: none;\n  color: var(--text-muted);\n}\n.bka-todo-row.is-complete .bka-todo-text {\n  color: var(--text-muted);\n  text-decoration: line-through;\n}\n.bka-todo-message {\n  color: var(--text-muted);\n}\n.bka-todo-form {\n  display: flex;\n  gap: 4px;\n  margin: 2px 0 6px;\n}\n.bka-todo-form .bka-todo-new {\n  min-width: 0;\n  width: 0;\n  flex: 1;\n  height: 24px;\n  padding: 2px 5px;\n  font-size: 12px;\n}\n.bka-todo-form .bka-todo-add {\n  height: 24px;\n  padding: 2px 6px;\n  font-size: 12px;\n}\n";
+module.exports = "/* Reserve the same slot in the native measurement card and the visible cards. */\n.theme-dark .bka-board.bka-todos .bases-kanban-card {\n  padding-bottom: calc(var(--bka-todo-native-bottom) + 116px) !important;\n}\n.bka-todo-panel {\n  position: absolute;\n  inset-inline: 12px;\n  bottom: var(--bka-todo-native-bottom);\n  height: 108px;\n  box-sizing: border-box;\n  overflow: auto;\n  overscroll-behavior: contain;\n  border-top: 1px solid var(--background-modifier-border);\n  padding-top: 4px;\n  font-size: 12px;\n  line-height: 20px;\n  cursor: text;\n  user-select: text;\n}\n.bka-todo-panel:focus-visible {\n  outline: 1px solid var(--interactive-accent);\n  outline-offset: 2px;\n}\n.bka-todo-heading {\n  font-weight: 600;\n  color: var(--text-muted);\n}\n.bka-todo-row {\n  display: flex;\n  align-items: baseline;\n  gap: 6px;\n  min-height: 20px;\n}\n.bka-todo-row input[type=\"checkbox\"] {\n  flex: none;\n  margin: 0;\n  opacity: 1;\n}\n.bka-todo-text {\n  overflow-wrap: anywhere;\n  white-space: pre-wrap;\n}\n.bka-todo-marker {\n  flex: none;\n  color: var(--text-muted);\n}\n.bka-todo-row.is-complete .bka-todo-text {\n  color: var(--text-muted);\n  text-decoration: line-through;\n}\n.bka-todo-message {\n  color: var(--text-muted);\n}\n";
 },
 "appearance/appearance.cjs": function(module, exports, require) {
 "use strict";
@@ -488,124 +488,8 @@ class Appearance {
 module.exports = { Appearance };
 
 },
-"todos/insertion.cjs": function(module, exports, require) {
-"use strict";
-
-function lineStart(source, offset) {
-  if (!Number.isInteger(offset) || offset < 0 || offset > source.length)
-    throw new Error("追加先の見出しを確認できません");
-  const start = source.lastIndexOf("\n", offset - 1) + 1;
-  if (source.slice(start, offset).trim())
-    throw new Error("追加先の見出しを確認できません");
-  return start;
-}
-
-function assertTailClosed(source, sections) {
-  // Appending must not extend an unterminated literal block into the new Todo.
-  const firstLine = source.replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0];
-  if (
-    firstLine === "---" &&
-    !source
-      .replace(/^\uFEFF/, "")
-      .split(/\r?\n/)
-      .slice(1)
-      .some((line) => /^(?:---|\.\.\.)[ \t]*$/.test(line))
-  ) {
-    throw new Error("ノート先頭のプロパティ区切りを閉じてから追加してください");
-  }
-  const tail = [...sections]
-    .reverse()
-    .find((section) => section.position?.start && section.position?.end);
-  if (!tail || source.slice(tail.position.end.offset).trim()) return;
-  const raw = source.slice(
-    tail.position.start.offset,
-    tail.position.end.offset,
-  );
-  if (tail.type === "comment" && (raw.match(/%%/g)?.length ?? 0) % 2) {
-    throw new Error("ノート末尾のコメントを閉じてから追加してください");
-  }
-  if (tail.type === "code") {
-    const lines = raw.trimEnd().split(/\r?\n/),
-      opener = lines[0].match(/^ {0,3}(`{3,}|~{3,})/);
-    if (
-      opener &&
-      (lines.length < 2 ||
-        !new RegExp(
-          `^ {0,3}${opener[1][0]}{${opener[1].length},}[ \\t]*$`,
-        ).test(lines.at(-1)))
-    ) {
-      throw new Error("ノート末尾のコードブロックを閉じてから追加してください");
-    }
-  }
-  if (tail.type === "html") {
-    const start = raw.trimStart(),
-      tag = start.match(/^<(script|pre|style|textarea)(?:\s|>)/i);
-    if (
-      (start.startsWith("<!--") &&
-        raw.lastIndexOf("<!--") > raw.lastIndexOf("-->")) ||
-      (start.startsWith("<?") && !raw.includes("?>")) ||
-      (start.startsWith("<![CDATA[") && !raw.includes("]]>")) ||
-      (tag && !new RegExp(`</${tag[1]}\\s*>`, "i").test(raw))
-    ) {
-      throw new Error("ノート末尾のHTMLやコメントを閉じてから追加してください");
-    }
-  }
-}
-
-function insertTodo(source, headings, sections, value) {
-  if (typeof value !== "string" || /[\r\n\x00]/.test(value) || !value.trim())
-    throw new Error("Todoを1行で入力してください");
-  const text = value.trim(),
-    eol = source.match(/\r\n|\n/)?.[0] ?? "\n";
-  const matches = headings.filter(
-    (heading) => heading.level === 2 && heading.heading === "Todo",
-  );
-  if (matches.length > 1)
-    throw new Error(
-      "「## Todo」が複数あるため追加できません。追加先を1つにしてください",
-    );
-  let at = source.length;
-  if (matches.length) {
-    const heading = matches[0],
-      start = lineStart(source, heading.position?.start?.offset);
-    if (
-      !/^ {0,3}##[ \t]+Todo(?:[ \t]+#+)?[ \t]*$/.test(
-        source
-          .slice(start)
-          .split(/\r?\n/, 1)[0]
-          .replace(/^\uFEFF/, ""),
-      )
-    ) {
-      throw new Error("追加先は「## Todo」形式の見出しにしてください");
-    }
-    const next = headings.find(
-      (item) =>
-        item.position?.start?.offset > heading.position.start.offset &&
-        item.level <= 2,
-    );
-    if (next) at = lineStart(source, next.position.start.offset);
-  }
-  if (at === source.length) assertTailClosed(source, sections);
-  let before = source.slice(0, at);
-  if (before && !before.endsWith(eol + eol))
-    before += before.endsWith("\n") ? eol : eol + eol;
-  if (!matches.length) before += "## Todo" + eol + eol;
-  return (
-    before +
-    "- [ ] " +
-    text +
-    eol +
-    (at < source.length ? eol : "") +
-    source.slice(at)
-  );
-}
-
-module.exports = { insertTodo };
-
-},
 "todos/todos.cjs": function(module, exports, require) {
 "use strict";
-const { insertTodo } = require("./insertion.cjs");
 
 // The metadata cache selects real Markdown tasks, so fenced examples are never scanned.
 function extractTasks(text, listItems) {
@@ -708,8 +592,6 @@ class TodoStore {
           tasks: extractTasks(text, cache.listItems),
           source: text,
           path,
-          headings: cache.headings ?? [],
-          sections: cache.sections ?? [],
         };
     } catch {
       next = {
@@ -725,24 +607,14 @@ class TodoStore {
   isSaving(file) {
     return this.writes.has(file);
   }
-  setChecked(file, record, task, checked) {
-    return this.writeSource(file, record, () => {
-      if (!record.tasks.includes(task)) throw new Error(staleMessage);
-      return replaceTaskState(record.source, task, checked);
-    });
-  }
-  addTask(file, record, text) {
-    return this.writeSource(file, record, () =>
-      insertTodo(record.source, record.headings, record.sections, text),
-    );
-  }
-  async writeSource(file, record, update) {
+  async setChecked(file, record, task, checked) {
     if (this.disposed) throw new Error("プラグインは無効です");
     if (this.writes.has(file))
       throw new Error("このノートのTodoを保存中です。完了後に操作してください");
     if (record.state !== "ready" || this.records.get(file) !== record)
       throw new Error(staleMessage);
-    const replacement = update();
+    if (!record.tasks.includes(task)) throw new Error(staleMessage);
+    const replacement = replaceTaskState(record.source, task, checked);
     if (replacement === record.source) return false;
     const operation = {};
     this.writes.set(file, operation);
@@ -799,37 +671,14 @@ class TodoPanels {
     this.roots = new Set();
     this.cards = new Map();
     this.disposed = false;
-    this.drafts = new Map();
-    this.focusRequests = new Map();
-    this.selections = new WeakMap();
-    this.focusDocuments = new Map();
-  }
-  observeFocus(doc) {
-    if (this.focusDocuments.has(doc)) return;
-    const clear = (event) => {
-      for (const [file, panel] of this.focusRequests)
-        if (panel.ownerDocument === doc) {
-          const inside = panel.contains(event.target);
-          if (
-            !inside ||
-            (event.type === "focusin" &&
-              !event.target.matches?.(".bka-todo-new, .bka-todo-add"))
-          )
-            this.focusRequests.delete(file);
-        }
-    };
-    doc.addEventListener("pointerdown", clear, true);
-    doc.addEventListener("focusin", clear);
-    this.focusDocuments.set(doc, () => {
-      doc.removeEventListener("pointerdown", clear, true);
-      doc.removeEventListener("focusin", clear);
-    });
   }
   lockControls(file) {
     for (const binding of this.cards.values())
       if (binding.file === file) {
-        for (const control of binding.panel.querySelectorAll("input, button"))
-          control.disabled = true;
+        for (const checkbox of binding.panel.querySelectorAll(
+          'input[type="checkbox"]',
+        ))
+          checkbox.disabled = true;
       }
   }
   finishControls(file) {
@@ -837,27 +686,6 @@ class TodoPanels {
     for (const binding of this.cards.values())
       if (binding.file === file) binding.record = null;
     this.store.changed();
-  }
-  setDraft(file, text) {
-    const draft = { text };
-    if (text) this.drafts.set(file, draft);
-    else this.drafts.delete(file);
-    this.syncDraft(file);
-    return draft;
-  }
-  syncDraft(file) {
-    for (const binding of this.cards.values())
-      if (binding.file === file) {
-        const input = binding.panel.querySelector(".bka-todo-new"),
-          button = binding.panel.querySelector(".bka-todo-add");
-        if (input && input.value !== (this.drafts.get(file)?.text ?? ""))
-          input.value = this.drafts.get(file)?.text ?? "";
-        if (button)
-          button.disabled =
-            this.store.isSaving(file) ||
-            binding.record?.state !== "ready" ||
-            !input?.value.trim();
-      }
   }
   update(boards, hideCompleted) {
     if (this.disposed) return false;
@@ -901,7 +729,6 @@ class TodoPanels {
         binding?.panel.remove();
         const doc = element.ownerDocument,
           panel = doc.createElement("div");
-        this.observeFocus(doc);
         panel.className = "bka-todo-panel";
         panel.tabIndex = 0;
         panel.setAttribute("role", "group");
@@ -940,18 +767,6 @@ class TodoPanels {
         binding.saving = saving;
         binding.hideCompleted = hideCompleted;
       }
-      // Native rendering may detach and reattach an unchanged panel, dropping focus.
-      const input = binding.panel.querySelector(".bka-todo-new");
-      if (
-        this.focusRequests.get(file) === binding.panel &&
-        input &&
-        !input.disabled &&
-        input.ownerDocument.activeElement !== input
-      ) {
-        const selection = this.selections.get(binding.panel);
-        input.focus({ preventScroll: true });
-        if (selection) input.setSelectionRange(...selection);
-      }
     }
     this.roots = roots;
     return geometryChanged;
@@ -959,16 +774,6 @@ class TodoPanels {
   render(panel, record, file, saving, hideCompleted) {
     const scroll = panel.scrollTop,
       doc = panel.ownerDocument;
-    const activeInput = doc.activeElement;
-    const editing =
-      panel.contains(activeInput) && activeInput.matches?.(".bka-todo-new");
-    const selection = editing
-      ? [
-          activeInput.selectionStart,
-          activeInput.selectionEnd,
-          activeInput.selectionDirection,
-        ]
-      : null;
     const fragment = doc.createDocumentFragment();
     const heading = fragment.appendChild(doc.createElement("div"));
     heading.className = "bka-todo-heading";
@@ -977,69 +782,6 @@ class TodoPanels {
         ? `Todo (${record.tasks.filter((task) => isDone(task.status)).length} / ${record.tasks.length})`
         : "Todo";
     panel.setAttribute("aria-busy", String(saving));
-    const form = fragment.appendChild(doc.createElement("form"));
-    form.className = "bka-todo-form";
-    const input = form.appendChild(doc.createElement("input"));
-    input.type = "text";
-    input.className = "bka-todo-new";
-    input.placeholder = "新しいTodo";
-    input.setAttribute("aria-label", "追加するTodo");
-    input.autocomplete = "off";
-    input.value = this.drafts.get(file)?.text ?? "";
-    input.disabled = saving || record.state !== "ready";
-    if (editing) {
-      this.selections.set(panel, selection);
-      if (input.disabled) this.focusRequests.set(file, panel);
-    }
-    const button = form.appendChild(doc.createElement("button"));
-    button.type = "submit";
-    button.className = "bka-todo-add";
-    button.textContent = "追加";
-    button.disabled = input.disabled || !input.value.trim();
-    const remember = () => {
-      this.focusRequests.set(file, panel);
-      this.selections.set(panel, [
-        input.selectionStart,
-        input.selectionEnd,
-        input.selectionDirection,
-      ]);
-    };
-    for (const name of ["focus", "select", "keyup"])
-      input.addEventListener(name, remember);
-    input.addEventListener("input", () => this.setDraft(file, input.value));
-    input.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter") return;
-      event.stopPropagation();
-      if (event.isComposing || event.keyCode === 229) return;
-      event.preventDefault();
-      form.requestSubmit();
-    });
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (
-        this.disposed ||
-        this.store.isSaving(file) ||
-        record.state !== "ready" ||
-        !input.value.trim()
-      )
-        return;
-      const draft = this.setDraft(file, input.value);
-      this.focusRequests.set(file, panel);
-      this.lockControls(file);
-      try {
-        await this.store.addTask(file, record, draft.text);
-        if (this.drafts.get(file) === draft) {
-          this.drafts.delete(file);
-          this.syncDraft(file);
-        }
-      } catch (error) {
-        if (!this.disposed)
-          this.reportError(`Todoを追加できませんでした。${error.message}`);
-      } finally {
-        this.finishControls(file);
-      }
-    });
     if (record.state !== "ready" || !record.tasks.length) {
       const message = fragment.appendChild(doc.createElement("div"));
       message.className = "bka-todo-message";
@@ -1094,14 +836,6 @@ class TodoPanels {
       }
     panel.replaceChildren(fragment);
     panel.scrollTop = scroll;
-    if (
-      !input.disabled &&
-      (editing || this.focusRequests.get(file) === panel)
-    ) {
-      const restoreSelection = selection ?? this.selections.get(panel);
-      input.focus({ preventScroll: true });
-      if (restoreSelection) input.setSelectionRange(...restoreSelection);
-    }
   }
   dispose() {
     this.disposed = true;
@@ -1110,12 +844,8 @@ class TodoPanels {
       root.classList.remove("bka-todos");
       root.style.removeProperty("--bka-todo-native-bottom");
     }
-    for (const dispose of this.focusDocuments.values()) dispose();
     this.cards.clear();
     this.roots.clear();
-    this.drafts.clear();
-    this.focusRequests.clear();
-    this.focusDocuments.clear();
   }
 }
 

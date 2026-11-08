@@ -51,21 +51,3 @@
 .bka-todo-message {
   color: var(--text-muted);
 }
-.bka-todo-form {
-  display: flex;
-  gap: 4px;
-  margin: 2px 0 6px;
-}
-.bka-todo-form .bka-todo-new {
-  min-width: 0;
-  width: 0;
-  flex: 1;
-  height: 24px;
-  padding: 2px 5px;
-  font-size: 12px;
-}
-.bka-todo-form .bka-todo-add {
-  height: 24px;
-  padding: 2px 6px;
-  font-size: 12px;
-}
