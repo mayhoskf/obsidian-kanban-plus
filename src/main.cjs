@@ -1,15 +1,21 @@
 'use strict';
 const { Plugin, Notice, normalizePath } = require('obsidian');
-const { emptySettings, SettingsStore } = require('./settings.cjs');
-const { NativeKanbanAdapter } = require('./native-adapter.cjs');
-const { Appearance } = require('./appearance.cjs');
-const { KanbanSettingTab } = require('./settings-tab.cjs');
-const { TodoStore, TodoPanels } = require('./todos.cjs');
+const { emptySettings, SettingsStore } = require('./settings/store.cjs');
+const { NativeKanbanAdapter } = require('./kanban/native-adapter.cjs');
+const { Appearance } = require('./appearance/appearance.cjs');
+const { KanbanSettingTab } = require('./settings/tab.cjs');
+const { TodoStore, TodoPanels } = require('./todos/todos.cjs');
+
+const CSS = [
+  require('./appearance/board.css'),
+  require('./settings/tab.css'),
+  require('./todos/panel.css'),
+].join('\n');
 
 module.exports = class BasesKanbanAppearance extends Plugin {
   async onload() {
     this.settings = new SettingsStore();
-    this.appearance = new Appearance();
+    this.appearance = new Appearance(CSS);
     this.stopped = false;
     this.settingsQueue = Promise.resolve();
     this.settingsText = null;

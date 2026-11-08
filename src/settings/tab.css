@@ -1,0 +1,25 @@
+.bka-settings .bka-settings-form {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+}
+.bka-settings .bka-setting-status {
+  color: var(--text-muted);
+}
+.bka-settings .bka-setting-error {
+  color: var(--text-error);
+}
+.bka-settings .bka-color-row .setting-item-control {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bka-settings .bka-color-hex {
+  width: 104px;
+}
+.bka-settings input[aria-invalid="true"] {
+  border-color: var(--text-error);
+}
+.bka-settings .setting-item-control select {
+  max-width: 100%;
+}

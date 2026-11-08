@@ -1,0 +1,38 @@
+.theme-dark .bases-view[data-view-type="kanban"].bka-board {
+  --bases-kanban-column-radius: 10px;
+  --bases-kanban-card-radius: 8px;
+  --bases-kanban-container-gap: 12px;
+  --bases-kanban-container-padding: 12px;
+  --bases-kanban-card-shadow:
+    0 0 0 1px var(--background-modifier-border), 0 1px 2px #0003;
+}
+
+.theme-dark .bka-board .bases-kanban-column {
+  --bases-kanban-column-background: color-mix(
+    in srgb,
+    var(--bka-accent, #a2a6ae) 10%,
+    var(--background-primary-alt)
+  );
+  --bases-kanban-column-header-background: transparent;
+  border-color: color-mix(
+    in srgb,
+    var(--bka-accent, #a2a6ae) 15%,
+    var(--background-modifier-border)
+  );
+}
+
+.theme-dark .bka-board .bases-kanban-column-header .bases-group-value {
+  background-color: color-mix(
+    in srgb,
+    var(--bka-accent, #a2a6ae) 24%,
+    var(--background-primary-alt)
+  );
+  color: var(--text-normal);
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-weight: 600;
+}
+
+.theme-dark .bka-board .bases-kanban-column-header .bases-group-count {
+  color: var(--text-muted);
+}

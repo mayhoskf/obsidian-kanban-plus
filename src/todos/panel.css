@@ -1,0 +1,71 @@
+/* Reserve the same slot in the native measurement card and the visible cards. */
+.theme-dark .bka-board.bka-todos .bases-kanban-card {
+  padding-bottom: calc(var(--bka-todo-native-bottom) + 116px) !important;
+}
+.bka-todo-panel {
+  position: absolute;
+  inset-inline: 12px;
+  bottom: var(--bka-todo-native-bottom);
+  height: 108px;
+  box-sizing: border-box;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: 4px;
+  font-size: 12px;
+  line-height: 20px;
+  cursor: text;
+  user-select: text;
+}
+.bka-todo-panel:focus-visible {
+  outline: 1px solid var(--interactive-accent);
+  outline-offset: 2px;
+}
+.bka-todo-heading {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.bka-todo-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 20px;
+}
+.bka-todo-row input[type="checkbox"] {
+  flex: none;
+  margin: 0;
+  opacity: 1;
+}
+.bka-todo-text {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.bka-todo-marker {
+  flex: none;
+  color: var(--text-muted);
+}
+.bka-todo-row.is-complete .bka-todo-text {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.bka-todo-message {
+  color: var(--text-muted);
+}
+.bka-todo-form {
+  display: flex;
+  gap: 4px;
+  margin: 2px 0 6px;
+}
+.bka-todo-form .bka-todo-new {
+  min-width: 0;
+  width: 0;
+  flex: 1;
+  height: 24px;
+  padding: 2px 5px;
+  font-size: 12px;
+}
+.bka-todo-form .bka-todo-add {
+  height: 24px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
