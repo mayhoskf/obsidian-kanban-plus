@@ -197,14 +197,15 @@ class KanbanSettingTab extends PluginSettingTab {
       this.render();
     }
   }
-  // The toggle command saved outside this tab. An unsaved draft keeps its edits, rebased on the new file.
-  applyExternalChange(data, text) {
+  applyTodoToggle(showTodos, previousText, text) {
     const visible = this.containerEl.isConnected;
     if (!this.draft || !this.dirty) {
       if (visible) this.display();
       return;
     }
-    this.draft.showTodos = data.showTodos ?? true;
+    // Rebase only drafts whose base contains all saved changes before the toggle.
+    if (this.expectedText !== previousText) return;
+    this.draft.showTodos = showTodos;
     this.expectedText = text;
     this.message = "";
     this.messageError = false;

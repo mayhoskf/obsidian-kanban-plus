@@ -22,7 +22,7 @@ const MODULES = [
 ];
 
 function moduleBody(name) {
-  const text = fs.readFileSync(path.join(srcDir, name), 'utf8');
+  const text = fs.readFileSync(path.join(srcDir, name), 'utf8').replace(/\r\n/g, '\n');
   return name.endsWith('.css') ? `module.exports = ${JSON.stringify(text)};` : text;
 }
 

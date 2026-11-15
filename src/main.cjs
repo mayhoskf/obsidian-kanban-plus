@@ -166,7 +166,6 @@ module.exports = class BasesKanbanAppearance extends Plugin {
       return true;
     });
   }
-  // Saves immediately through the same compare-and-swap as the settings tab, then rebases its draft.
   async toggleTodos() {
     if (this.settingsLoadError) {
       new Notice(
@@ -176,16 +175,18 @@ module.exports = class BasesKanbanAppearance extends Plugin {
       return false;
     }
     const showTodos = !this.settings.current.showTodos;
+    const previousText = this.settingsText;
     try {
       if (
         !(await this.saveSettingsFromEditor(
           { ...this.settings.data, showTodos },
-          this.settingsText,
+          previousText,
         ))
       )
         return false;
-      this.settingsTab?.applyExternalChange(
-        this.settings.data,
+      this.settingsTab?.applyTodoToggle(
+        showTodos,
+        previousText,
         this.settingsText,
       );
       new Notice(

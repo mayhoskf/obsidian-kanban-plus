@@ -491,39 +491,43 @@ module.exports = { Appearance };
 "todos/todos.cjs": function(module, exports, require) {
 "use strict";
 
+const { createHash } = require("node:crypto");
+const noteDecoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
+
 // The metadata cache selects real Markdown tasks, so fenced examples are never scanned.
 function extractTasks(text, listItems) {
   const items = listItems ?? [];
   const byLine = new Map(items.map((item) => [item.position.start.line, item]));
-  return items
-    .filter((item) => typeof item.task === "string")
-    .map((item) => {
-      const { offset, line } = item.position.start;
-      if (!Number.isInteger(offset) || offset < 0 || offset > text.length)
-        throw new Error("Todoの位置を確認できません");
-      const firstLine = text.slice(offset).split(/\r?\n/, 1)[0];
-      const match = firstLine.match(
-        /^(?:[-+*]|\d{1,9}[.)])[ \t]+\[([^\]\r\n])\](?:[ \t]+|$)(.*)$/u,
-      );
-      if (!match || match[1] !== item.task)
-        throw new Error("本文の解析更新を待っています");
-      let depth = 0,
-        parent = item.parent;
-      const visited = new Set([line]);
-      while (parent >= 0 && byLine.has(parent)) {
-        if (visited.has(parent)) throw new Error("Todoの階層を確認できません");
-        visited.add(parent);
-        depth++;
-        parent = byLine.get(parent).parent;
-      }
-      return {
-        text: match[2],
-        status: item.task,
-        line,
-        depth,
-        statusOffset: offset + firstLine.indexOf("[") + 1,
-      };
+  // Obsidian's parser strips the BOM, but Vault.process receives the original text.
+  const bomLength = text.startsWith("\uFEFF") ? 1 : 0;
+  const tasks = [];
+  for (const item of items) {
+    if (typeof item.task !== "string") continue;
+    const { offset, line } = item.position.start;
+    if (!Number.isInteger(offset) || offset < 0) continue;
+    const start = offset + bomLength;
+    const firstLine = text.slice(start).split(/[\r\n]/, 1)[0];
+    const match = firstLine.match(
+      /^[ \t]*(?:[-+*]|\d+[.)])[ \t]+\[(.)\](?:[ \t]+|$)(.*)$/su,
+    );
+    if (!match || match[1] !== item.task) continue;
+    let depth = 0,
+      parent = item.parent;
+    const visited = new Set([line]);
+    while (parent >= 0 && byLine.has(parent) && !visited.has(parent)) {
+      visited.add(parent);
+      depth++;
+      parent = byLine.get(parent).parent;
+    }
+    tasks.push({
+      text: match[2],
+      status: item.task,
+      line,
+      depth,
+      statusOffset: start + firstLine.indexOf("[") + 1,
     });
+  }
+  return tasks;
 }
 
 const isChecked = (status) => /^[xX]$/.test(status);
@@ -567,32 +571,36 @@ class TodoStore {
     return record;
   }
   async load(file, pending) {
-    const cache = this.app.metadataCache.getFileCache(file);
+    const { metadataCache, vault } = this.app;
+    const cache = metadataCache.getFileCache(file);
     if (!cache) return; // The metadata changed event will retry after parsing finishes.
-    const path = file.path,
-      mtime = file.stat.mtime,
-      size = file.stat.size;
+    const path = file.path;
     let next;
     try {
-      const text = await this.app.vault.cachedRead(file);
+      // Obsidian's metadata index keys this cache by the SHA-256 of the raw note.
+      const hash = metadataCache.getFileInfo?.(path)?.hash;
+      if (!hash) throw new Error("Todoの解析元を確認できません");
+      const bytes = new Uint8Array(await vault.readBinary(file));
       if (
-        cache !== this.app.metadataCache.getFileCache(file) ||
         path !== file.path ||
-        mtime !== file.stat.mtime ||
-        size !== file.stat.size
+        cache !== metadataCache.getFileCache(file) ||
+        hash !== metadataCache.getFileInfo(path)?.hash ||
+        hash !== createHash("sha256").update(bytes).digest("hex")
       ) {
         next = {
           state: "error",
           tasks: [],
           message: "本文の解析更新を待っています",
         };
-      } else
+      } else {
+        const text = noteDecoder.decode(bytes);
         next = {
           state: "ready",
           tasks: extractTasks(text, cache.listItems),
           source: text,
           path,
         };
+      }
     } catch {
       next = {
         state: "error",
@@ -1052,14 +1060,15 @@ class KanbanSettingTab extends PluginSettingTab {
       this.render();
     }
   }
-  // The toggle command saved outside this tab. An unsaved draft keeps its edits, rebased on the new file.
-  applyExternalChange(data, text) {
+  applyTodoToggle(showTodos, previousText, text) {
     const visible = this.containerEl.isConnected;
     if (!this.draft || !this.dirty) {
       if (visible) this.display();
       return;
     }
-    this.draft.showTodos = data.showTodos ?? true;
+    // Rebase only drafts whose base contains all saved changes before the toggle.
+    if (this.expectedText !== previousText) return;
+    this.draft.showTodos = showTodos;
     this.expectedText = text;
     this.message = "";
     this.messageError = false;
@@ -1485,7 +1494,6 @@ module.exports = class BasesKanbanAppearance extends Plugin {
       return true;
     });
   }
-  // Saves immediately through the same compare-and-swap as the settings tab, then rebases its draft.
   async toggleTodos() {
     if (this.settingsLoadError) {
       new Notice(
@@ -1495,16 +1503,18 @@ module.exports = class BasesKanbanAppearance extends Plugin {
       return false;
     }
     const showTodos = !this.settings.current.showTodos;
+    const previousText = this.settingsText;
     try {
       if (
         !(await this.saveSettingsFromEditor(
           { ...this.settings.data, showTodos },
-          this.settingsText,
+          previousText,
         ))
       )
         return false;
-      this.settingsTab?.applyExternalChange(
-        this.settings.data,
+      this.settingsTab?.applyTodoToggle(
+        showTodos,
+        previousText,
         this.settingsText,
       );
       new Notice(
